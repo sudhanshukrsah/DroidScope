@@ -14,7 +14,7 @@ from utils import load_and_format_prompt
 load_dotenv()
 
 # Configuration
-APP_NAME = "Instagram"
+APP_NAME = "Blinkit"
 OPENROUTER_KEY = os.getenv("API_KEY")
 MAX_STEPS = 110
 OUTPUT_FILE = "agent_result.txt"

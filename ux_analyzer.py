@@ -143,6 +143,156 @@ class UXAnalyzer:
             print("="*60 + "\n")
         
         return success
+    
+    def run_analysis_for_web(self, report_path="agent_result.txt", category="General", progress_callback=None, log_callback=None):
+        """Analysis pipeline for web interface - generates JSON blocks instead of full HTML"""
+        
+        def log(message, log_type='info'):
+            """Helper to send log if callback provided"""
+            if log_callback:
+                log_callback(message, log_type)
+            print(f"[{log_type.upper()}] {message}")
+        
+        if progress_callback:
+            progress_callback("Reading exploration report...", 75)
+        log("Loading exploration report for analysis", 'info')
+        
+        # Step 1: Read report
+        report_content = self.read_report(report_path)
+        if not report_content:
+            log("No report content found", 'error')
+            if progress_callback:
+                progress_callback("Error: No report content", -1)
+            return False
+        
+        log(f"Report loaded: {len(report_content)} characters", 'success')
+        if progress_callback:
+            progress_callback("Analyzing UX patterns...", 80)
+        
+        log(f"Starting LLM-based UX analysis for {category} category", 'info')
+        # Step 2: Analyze UX with enhanced prompt for positive findings
+        analysis_data = self.analyze_ux_with_positive(report_content, category)
+        if not analysis_data:
+            log("UX analysis failed to produce results", 'error')
+            if progress_callback:
+                progress_callback("Error: Analysis failed", -1)
+            return False
+        
+        log("UX analysis completed successfully", 'success')
+        if progress_callback:
+            progress_callback("Generating insights...", 90)
+        
+        # Save analysis blocks as JSON for web frontend
+        try:
+            log("Saving analysis to ux_analysis_blocks.json", 'info')
+            with open("ux_analysis_blocks.json", "w", encoding="utf-8") as f:
+                json.dump(analysis_data, f, indent=2)
+            log("Analysis blocks saved successfully", 'success')
+        except Exception as e:
+            log(f"Error saving analysis: {str(e)}", 'error')
+            if progress_callback:
+                progress_callback(f"Error: {str(e)}", -1)
+            return False
+        
+        if progress_callback:
+            progress_callback("Analysis complete!", 95)
+        log("UX analysis pipeline completed", 'success')
+        
+        return True
+    
+    def analyze_ux_with_positive(self, report_content, category):
+        """Analyze UX with focus on both positive and negative findings"""
+        enhanced_prompt = f"""You are a senior UI/UX architect analyzing a {category} application.
+
+Analyze this UI exploration report focusing on BOTH strengths and weaknesses.
+
+Report:
+---
+{report_content}
+---
+
+Provide a balanced analysis including:
+
+1. POSITIVE FINDINGS - What works well:
+   - Effective navigation patterns
+   - Good feature placement
+   - Intuitive user flows
+   - Successful {category}-specific UX
+
+2. ISSUES - What needs improvement:
+   - Navigation friction
+   - Discoverability problems
+   - Complexity issues
+   - {category}-specific gaps
+
+3. METRICS - Quantifiable data
+
+Return STRICTLY this JSON format:
+
+{{
+  "summary": "Balanced overview mentioning both strengths and areas for improvement",
+  
+  "positive": [
+    {{
+      "aspect": "What works well",
+      "description": "Why it's good UX"
+    }}
+  ],
+  
+  "issues": [
+    {{
+      "category": "Issue type",
+      "severity": "High|Medium|Low",
+      "description": "What's wrong"
+    }}
+  ],
+  
+  "suggestions": [
+    {{
+      "priority": "High|Medium|Low",
+      "recommendation": "Specific improvement",
+      "impact": "Expected benefit"
+    }}
+  ],
+  
+  "metrics": {{
+    "total_screens": <number>,
+    "max_depth": <number>,
+    "avg_depth": <number>,
+    "hub_screen_count": <number>,
+    "shallow_engagement_ratio": <number 0-1>,
+    "complexity_score": <number 1-10>
+  }}
+}}
+
+Output JSON only. No markdown. Be specific to {category} apps."""
+
+        try:
+            print("🔄 Analyzing UX (including positive findings)...")
+            response = self.llm.complete(enhanced_prompt)
+            analysis_text = response.text.strip()
+            
+            # Remove markdown code blocks if present
+            if analysis_text.startswith("```json"):
+                analysis_text = analysis_text.split("```json")[1].split("```")[0].strip()
+            elif analysis_text.startswith("```"):
+                analysis_text = analysis_text.split("```")[1].split("```")[0].strip()
+            
+            analysis_json = json.loads(analysis_text)
+            
+            # Ensure positive field exists
+            if 'positive' not in analysis_json:
+                analysis_json['positive'] = []
+            
+            print("✓ UX analysis completed")
+            return analysis_json
+        except json.JSONDecodeError as e:
+            print(f"Error parsing JSON response: {str(e)}")
+            print(f"Raw response: {analysis_text[:500]}")
+            return None
+        except Exception as e:
+            print(f"Error during analysis: {str(e)}")
+            return None
 
 
 if __name__ == "__main__":

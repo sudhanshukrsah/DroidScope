@@ -1,6 +1,9 @@
 # Core DroidRun framework
 droidrun
 
+# Web framework
+flask
+
 # LLM integration
 llama-index-llms-openai-like
 llama-index-core
@@ -17,3 +20,5 @@ python-dotenv
 # - os
 # - datetime
 # - typing
+# - queue
+# - threading
