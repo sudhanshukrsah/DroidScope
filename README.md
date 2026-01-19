@@ -76,7 +76,7 @@ generating comprehensive analysis reports with real-time execution logs.
 ### 🚀 Automation
 - **Autonomous Navigation** - AI explores like humans
 - **Breadth-First Search** - Comprehensive coverage
-- **Structured Output** - Pydantic models & JSON
+- **Structured Output** - Navigation graph JSON + analysis blocks
 
 </td>
 </tr>
