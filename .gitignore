@@ -1,0 +1,11 @@
+
+__pycache__
+trajectories
+venv
+.env
+agent_result.txt
+ux_analysis.json
+ux_analysis_report.html
+ux_analysis_report1.html
+whatsapp_exploration_report.md
+instagram_exploration_report.md

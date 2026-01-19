@@ -1,0 +1,19 @@
+# Core DroidRun framework
+droidrun
+
+# LLM integration
+llama-index-llms-openai-like
+llama-index-core
+
+# Data validation and serialization
+pydantic>=2.0.0
+
+# Environment variable management
+python-dotenv
+
+# Standard library (no installation needed)
+# - asyncio
+# - json
+# - os
+# - datetime
+# - typing
