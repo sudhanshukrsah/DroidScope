@@ -2,8 +2,6 @@ from droidrun import DroidAgent
 from droidrun.config_manager import DroidrunConfig
 from llama_index.llms.openai_like import OpenAILike
 import asyncio
-from pydantic import BaseModel, Field
-from typing import List
 from datetime import datetime
 import json
 from dotenv import load_dotenv
@@ -18,27 +16,6 @@ APP_NAME = "Blinkit"
 OPENROUTER_KEY = os.getenv("API_KEY")
 MAX_STEPS = 110
 OUTPUT_FILE = "agent_result.txt"
-
-# Pydantic Model 
-class Screen(BaseModel):
-    id: str = Field(description="Unique identifier or hash of the screen")
-    title: str = Field(description="Human-readable name of the screen")
-    depth: int = Field(description="Depth level in navigation flow")
-
-
-class Transition(BaseModel):
-    from_screen: str = Field(description="Source screen ID")
-    to_screen: str = Field(description="Destination screen ID")
-    action: str = Field(description="UI action that caused the transition")
-
-
-class UXFlow(BaseModel):
-    screens: List[Screen] = Field(description="List of discovered screens")
-    transitions: List[Transition] = Field(description="Navigation transitions")
-    total_screens: int = Field(description="Total number of unique screens")
-    max_depth: int = Field(description="Maximum depth explored")
-    exploration_time: float = Field(description="Exploration time in seconds")
-
 
 # Create OpenRouter LLM with Mistral model
 llm = OpenAILike(
