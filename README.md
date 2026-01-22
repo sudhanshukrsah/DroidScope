@@ -168,13 +168,10 @@ python app.py             # 🚀 Start server
 <div align="center">
 
 ### **Main Interface**
-<img src="./images/ui 1.png" alt="DroidScope Main Interface" width="800">
+<img src="./images/ui 3.png" alt="UX Analysis Results" width="800">
 
 ### **Real-Time Execution Logs**
 <img src="./images/ui 2.png" alt="Live Terminal Logs" width="800">
-
-### **Analysis Results & Reports**
-<img src="./images/ui 3.png" alt="UX Analysis Results" width="800">
 
 </div>
 
