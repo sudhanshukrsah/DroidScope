@@ -1219,7 +1219,7 @@ Contributions are welcome! Feel free to submit issues or pull requests.
 
 - **Shashank Bharti** - Core Development
 - **Sudhanshu Kumar** - Core Development
-- **Sumit Kumar** - Motivational Support🤌🏼
+- **Sumit Kumar** - UI Design and Research
 
 ---
 
