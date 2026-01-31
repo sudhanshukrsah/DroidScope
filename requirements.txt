@@ -11,6 +11,9 @@ llama-index-core
 # Environment variable management
 python-dotenv
 
+# Database (SQLite is built-in, but we need these for migrations if needed)
+# sqlite3 is built-in
+
 # Standard library (no installation needed)
 # - asyncio
 # - json
@@ -19,3 +22,7 @@ python-dotenv
 # - typing
 # - queue
 # - threading
+# - sqlite3
+# - uuid
+# - subprocess
+# - time

@@ -1,0 +1,228 @@
+You are a senior UX/Product analyst synthesizing exploration data from multiple stages of autonomous testing on {app_name}, a {category} application, analyzed from the perspective of a {persona}.
+
+## YOUR TASK
+
+You have been provided with data from three exploration stages:
+1. **Stage 1 - Basic Exploration**: App structure, screen inventory, navigation mapping
+2. **Stage 2 - {persona} Analysis**: Role-specific evaluation and findings
+3. **Stage 3 - Stress Testing**: Edge cases, breakability, resilience testing
+
+Your task is to synthesize all findings into a comprehensive, actionable UX analysis report.
+
+## STAGE DATA
+
+### Stage 1 Data:
+```
+{stage1_data}
+```
+
+### Stage 2 Data:
+```
+{stage2_data}
+```
+
+### Stage 3 Data:
+```
+{stage3_data}
+```
+
+## ANALYSIS REQUIREMENTS
+
+Process all stage data to extract:
+
+1. **Quantitative Metrics**
+   - Calculate percentages from counts
+   - Derive scores from observations
+   - Aggregate severity distributions
+
+2. **Pattern Recognition**
+   - Identify recurring issues across stages
+   - Find positive patterns that repeat
+   - Note inconsistencies between stages
+
+3. **{persona}-Weighted Analysis**
+   - Weight findings based on {persona} priorities
+   - Focus on what matters most to this role
+   - Provide role-specific recommendations
+
+4. **Category Benchmarking**
+   - Compare against {category} app standards
+   - Identify category-specific gaps
+   - Note competitive positioning
+
+## OUTPUT FORMAT
+
+Return STRICTLY this JSON format:
+
+{{
+  "exploration_id": "{exploration_id}",
+  "app_name": "{app_name}",
+  "category": "{category}",
+  "persona": "{persona}",
+  
+  "summary": "3-4 sentence executive summary: UX maturity level, key strengths, primary risks, overall recommendation",
+  
+  "app_metadata": {{
+    "screens_discovered": <number from stage1>,
+    "total_interactions": <number>,
+    "core_flows": ["flow1", "flow2", "flow3"]
+  }},
+  
+  "exploration_coverage": {{
+    "screens_discovered": <number>,
+    "clickable_elements_found": <number>,
+    "successful_actions_pct": <0-100>,
+    "dead_elements_pct": <0-100>,
+    "navigation_loops_detected": <boolean>
+  }},
+  
+  "navigation_metrics": {{
+    "avg_depth": <number>,
+    "max_depth": <number>,
+    "backtracking_frequency": "low|medium|high",
+    "orphan_screens": <count>,
+    "label_action_match_score": <1-10>,
+    "hub_screen_count": <number>,
+    "architecture_quality": "clear|moderate|poor"
+  }},
+  
+  "interaction_feedback": {{
+    "visible_feedback_rate_pct": <0-100>,
+    "loading_state_presence_pct": <0-100>,
+    "error_message_clarity": <1-10>,
+    "silent_failures": <count>,
+    "feedback_quality": "excellent|good|moderate|poor"
+  }},
+  
+  "visual_hierarchy": {{
+    "cta_visibility": <1-10>,
+    "tap_target_compliance_pct": <0-100>,
+    "icon_label_clarity": <1-10>,
+    "hierarchy_issues": <count>,
+    "clarity_rating": "clear|moderate|poor"
+  }},
+  
+  "consistency": {{
+    "reused_patterns": ["pattern1", "pattern2"],
+    "inconsistent_labels": <count>,
+    "action_placement_variance": "low|medium|high",
+    "pattern_violations": <count>
+  }},
+  
+  "error_handling": {{
+    "preventable_errors": <count>,
+    "recovery_paths_available": <boolean>,
+    "error_explanation_quality": <1-10>,
+    "handling_rating": "excellent|good|moderate|poor"
+  }},
+  
+  "stress_test_results": {{
+    "breakability_score": <1-10>,
+    "navigation_stability": <1-10>,
+    "state_consistency": <1-10>,
+    "error_resilience": <1-10>,
+    "recovery_capability": <1-10>,
+    "dark_patterns_found": <count>,
+    "critical_bugs": <count>
+  }},
+  
+  "persona_specific_scores": {{
+    "role": "{persona}",
+    "primary_metric_score": <1-10>,
+    "category_compliance": <1-10>,
+    "recommendation_alignment": <1-10>
+  }},
+  
+  "positive": [
+    {{
+      "aspect": "Specific positive finding",
+      "location": "Screen/feature location",
+      "description": "Why this is good with evidence",
+      "persona_relevance": "Why {persona} cares"
+    }}
+  ],
+  
+  "issues": [
+    {{
+      "category": "Navigation|Feedback|Hierarchy|Consistency|Error Handling|Stress",
+      "severity": "Critical|High|Medium|Low",
+      "location": "Specific screen + element",
+      "description": "What's wrong with concrete example",
+      "impact": "User impact description",
+      "effort": "Low|Medium|High",
+      "persona_priority": "High|Medium|Low for {persona}"
+    }}
+  ],
+  
+  "dark_patterns": [
+    {{
+      "type": "Pattern type name",
+      "location": "Where found",
+      "description": "How it manipulates users",
+      "severity": "High|Medium|Low"
+    }}
+  ],
+  
+  "recommendations": [
+    {{
+      "priority": "Critical|High|Medium|Low",
+      "recommendation": "Specific actionable change",
+      "rationale": "Why this matters for {persona}",
+      "expected_impact": {{
+        "task_success_increase_pct": <number>,
+        "time_reduction_pct": <number>,
+        "error_reduction_pct": <number>
+      }},
+      "effort": "Low|Medium|High"
+    }}
+  ],
+  
+  "ux_confidence_score": {{
+    "score": <1-10>,
+    "factors": {{
+      "exploration_coverage": <1-10>,
+      "interaction_consistency": <1-10>,
+      "feedback_reliability": <1-10>,
+      "recovery_robustness": <1-10>,
+      "stress_resilience": <1-10>
+    }}
+  }},
+  
+  "complexity_score": <1-10>,
+  
+  "overall_rating": {{
+    "score": <1-10>,
+    "grade": "A|B|C|D|F",
+    "summary": "One sentence overall assessment"
+  }},
+  
+  "graph_data": {{
+    "radar_metrics": {{
+      "navigation": <1-10>,
+      "feedback": <1-10>,
+      "consistency": <1-10>,
+      "accessibility": <1-10>,
+      "error_handling": <1-10>,
+      "visual_design": <1-10>
+    }},
+    "severity_distribution": {{
+      "critical": <count>,
+      "high": <count>,
+      "medium": <count>,
+      "low": <count>
+    }},
+    "category_comparison": {{
+      "app_score": <1-10>,
+      "category_average": 7
+    }}
+  }}
+}}
+
+## CRITICAL RULES
+
+1. **Use Stage Data**: Every metric must come from the provided stage data
+2. **Be Specific**: Reference actual screens, buttons, counts from the data
+3. **Quantify Everything**: Use numbers and percentages, not vague statements
+4. **{persona} Focus**: Weight everything through {persona} priorities
+5. **JSON Only**: Output valid JSON only, no markdown or explanations
+6. **Complete All Fields**: Every field must have a value (use 0 or "N/A" if unknown)
