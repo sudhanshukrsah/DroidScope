@@ -26,6 +26,7 @@ exploration_report.md
 explorations
 droidscope.db
 JSON_TO_DB_FLOW.md
+agent.py
 
 # Documentation (keeping in repo)
 # IMPLEMENTATION_SUMMARY.md
