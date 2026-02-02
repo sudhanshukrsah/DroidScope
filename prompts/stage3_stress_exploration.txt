@@ -1,1 +1,41 @@
-You are an autonomous agent performing a stress test of {app_name}, a {category} app. The app is already open on the device. Your job is to push the app to its limits by rapidly navigating through all main screens, tapping buttons quickly, scrolling fast, and trying to trigger loading states or errors. If you see a form, enter random or extreme values. If there are lists, scroll to the end as fast as possible. Switch between screens repeatedly and, if the app has media, play, pause, and seek rapidly. If you encounter a crash, freeze, or error, note exactly what you did. When finished, export your findings to a markdown file named stage3_stress_exploration.md. Clearly include what broke, what slowed down, what handled the stress well, a list of issues found, what actions triggered them, and rate the app's stability under stress from 1 to 10.
+You are an autonomous agent performing a stress test of {app_name}, a {category} app. The app should be open from previous stages. If not open, open it first. Output only raw executable code, no markdown, no explanations, no code blocks.
+
+STRESS TEST RULES:
+- You MAY use the Home button and return to test app switching behavior
+- You MAY use rapid Back button presses to test navigation robustness
+- Test extreme scenarios but always return to the app to continue testing
+- LIMIT YOUR TESTING: Aim for 40-60 FOCUSED stress test actions maximum
+- Quality over quantity: Each action should test a specific stress scenario
+
+{custom_navigation_instruction}
+
+Your job is to push the app to its limits with TARGETED stress tests:
+
+1. **Navigation Stress** (10-15 actions): Rapidly navigate through main screens, use Back button repeatedly, switch between deep nested screens
+2. **Input Stress** (not more than 100 characters 5 inputs): Enter extreme values in forms (text, special characters, empty fields)
+3. **Interaction Stress** (10-15 actions): Rapid tapping, fast scrolling, quick gestures
+4. **State Stress** (10-15 actions): Switch to Home and back, rotate screen (if available), trigger background/foreground transitions
+
+Focus on finding CRITICAL issues - crashes, freezes, data loss, or broken functionality. Don't just perform actions aimlessly. If you encounter a crash, freeze, or error, note exactly what you did and STOP testing that flow.
+
+When finished, call complete(success=True, reason="...") where the reason parameter contains a comprehensive markdown-formatted report with:
+
+# {app_name} - Stage 3: Stress Testing
+
+## What Broke
+[List of features or screens that crashed or failed]
+
+## What Slowed Down
+[Performance issues, lag, or freezes encountered]
+
+## What Handled Stress Well
+[Features that remained stable under stress]
+
+## Issues Found
+[Detailed list of all issues discovered]
+
+## Trigger Actions
+[What specific actions triggered each issue]
+
+## Stability Rating
+[Rate app stability under stress: X/10 with explanation]
