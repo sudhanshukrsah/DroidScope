@@ -7,6 +7,11 @@ let charts = {};
 let currentSection = 'scan';
 let latestResultData = null;
 
+// Log optimization
+const MAX_LOG_ENTRIES = 500; // Keep only last 500 log entries
+let logQueue = []; // Queue for batching log renders
+let logRenderTimer = null;
+
 // Initialize on load
 document.addEventListener('DOMContentLoaded', () => {
     // Check device status
@@ -51,16 +56,37 @@ async function checkDeviceStatus() {
         const response = await fetch('/api/device-status');
         const data = await response.json();
         const indicator = document.getElementById('deviceIndicator');
+        const statusText = document.getElementById('deviceStatusText');
+        
+        if (!indicator || !statusText) {
+            console.warn('Device indicator elements not found');
+            return;
+        }
         
         if (data.connected) {
             indicator.classList.remove('device-disconnected');
             indicator.classList.add('device-connected');
+            statusText.textContent = 'Device connected';
+            statusText.className = 'text-xs whitespace-nowrap text-green-400';
         } else {
             indicator.classList.remove('device-connected');
             indicator.classList.add('device-disconnected');
+            statusText.textContent = 'Device not connected';
+            statusText.className = 'text-xs whitespace-nowrap text-red-400';
         }
     } catch (error) {
-        console.error('Device status error:', error);
+        console.error('Device status check failed:', error);
+        const indicator = document.getElementById('deviceIndicator');
+        const statusText = document.getElementById('deviceStatusText');
+        
+        if (indicator) {
+            indicator.classList.remove('device-connected');
+            indicator.classList.add('device-disconnected');
+        }
+        if (statusText) {
+            statusText.textContent = 'Device not connected';
+            statusText.className = 'text-xs whitespace-nowrap text-red-400';
+        }
     }
 }
 
@@ -68,39 +94,103 @@ async function checkDeviceStatus() {
 function appendLog(message, type = 'info') {
     if (!logStartTime) logStartTime = Date.now();
     
-    const terminalOutput = document.getElementById('terminalOutput');
-    const elapsed = Date.now() - logStartTime;
-    const seconds = Math.floor(elapsed / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
+    // Add to queue instead of rendering immediately
+    logQueue.push({ message, type, time: Date.now() });
     
-    const timestamp = `[${String(hours).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}]`;
+    // Debounce rendering - render every 100ms max
+    if (!logRenderTimer) {
+        logRenderTimer = setTimeout(() => {
+            renderLogQueue();
+            logRenderTimer = null;
+        }, 100);
+    }
+}
+
+function renderLogQueue() {
+    if (logQueue.length === 0) return;
     
-    const colors = {
-        info: 'text-zinc-400',
-        success: 'text-green-400',
-        warning: 'text-yellow-400',
-        error: 'text-red-400',
-        agent: 'text-blue-400'
-    };
-    
-    const lines = message.split('\n');
-    lines.forEach(line => {
-        if (line.trim()) {
-            const entry = document.createElement('div');
-            entry.className = `${colors[type] || 'text-zinc-400'}`;
-            entry.innerHTML = `<span class="text-zinc-600">${timestamp}</span> ${line}`;
-            terminalOutput.appendChild(entry);
+    // Use requestAnimationFrame for smoother rendering
+    requestAnimationFrame(() => {
+        try {
+            const terminalOutput = document.getElementById('terminalOutput');
+            if (!terminalOutput) return;
+            
+            const fragment = document.createDocumentFragment();
+            
+            const colors = {
+                info: 'text-zinc-400',
+                success: 'text-green-400',
+                warning: 'text-yellow-400',
+                error: 'text-red-400',
+                agent: 'text-blue-400'
+            };
+            
+            // Process queued logs (limit to 100 per batch to avoid blocking)
+            const logsToProcess = logQueue.splice(0, 100);
+            
+            logsToProcess.forEach(({ message, type, time }) => {
+                const elapsed = time - logStartTime;
+                const seconds = Math.floor(elapsed / 1000);
+                const minutes = Math.floor(seconds / 60);
+                const hours = Math.floor(minutes / 60);
+                
+                const timestamp = `[${String(hours).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}]`;
+                
+                const lines = message.split('\n');
+                lines.forEach(line => {
+                    if (line.trim()) {
+                        const entry = document.createElement('div');
+                        entry.className = `${colors[type] || 'text-zinc-400'}`;
+                        entry.innerHTML = `<span class="text-zinc-600">${timestamp}</span> ${escapeHtml(line)}`;
+                        fragment.appendChild(entry);
+                    }
+                });
+            });
+            
+            // Append all at once
+            terminalOutput.appendChild(fragment);
+            
+            // Limit total entries - remove old ones if exceeds limit
+            const entries = terminalOutput.children;
+            if (entries.length > MAX_LOG_ENTRIES) {
+                const toRemove = entries.length - MAX_LOG_ENTRIES;
+                for (let i = 0; i < toRemove; i++) {
+                    terminalOutput.removeChild(entries[0]);
+                }
+            }
+            
+            // Scroll to bottom (throttled)
+            terminalOutput.scrollTop = terminalOutput.scrollHeight;
+            
+            // If there are still logs in queue, schedule another render
+            if (logQueue.length > 0) {
+                logRenderTimer = setTimeout(() => {
+                    renderLogQueue();
+                    logRenderTimer = null;
+                }, 50);
+            }
+        } catch (err) {
+            console.error('Error rendering logs:', err);
+            logQueue = []; // Clear queue on error to prevent infinite loop
         }
     });
-    
-    terminalOutput.scrollTop = terminalOutput.scrollHeight;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 function clearLogs() {
     const terminalOutput = document.getElementById('terminalOutput');
     terminalOutput.innerHTML = '<div class="text-zinc-500">[00:00:00] Logs cleared</div>';
     logStartTime = null;
+    logQueue = [];
+    if (logRenderTimer) {
+        clearTimeout(logRenderTimer);
+        logRenderTimer = null;
+    }
 }
 
 // Start Test
@@ -130,6 +220,11 @@ async function startTest() {
     document.getElementById('startBtn').disabled = true;
     document.getElementById('startBtn').classList.add('opacity-50');
     
+    // Start listening for updates BEFORE starting the test to avoid missing logs
+    listenForProgress();
+    listenForLogs();
+    listenForStages();
+    
     try {
         appendLog('Starting exploration...', 'info');
         
@@ -149,11 +244,6 @@ async function startTest() {
         const data = await response.json();
         appendLog(`Exploration started for ${appName}`, 'success');
         
-        // Start listening for updates
-        listenForProgress();
-        listenForLogs();
-        listenForStages();
-        
     } catch (error) {
         appendLog('Error: ' + error.message, 'error');
         resetExploration();
@@ -162,29 +252,45 @@ async function startTest() {
 
 // SSE Listeners
 function listenForProgress() {
-    if (eventSources.progress) eventSources.progress.close();
+    if (eventSources.progress) {
+        try {
+            eventSources.progress.close();
+        } catch (e) {
+            // Ignore
+        }
+    }
     
     const source = new EventSource('/api/progress');
     eventSources.progress = source;
     
     source.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        if (data.keepalive) return;
-        
-        updateProgress(data.message, data.percentage);
-        
-        if (data.percentage >= 100) {
-            source.close();
-            // Immediately load and display results
-            loadResultsAndShow();
-        } else if (data.percentage < 0) {
-            source.close();
-            appendLog('Exploration failed', 'error');
-            resetExploration();
+        try {
+            const data = JSON.parse(event.data);
+            if (data.keepalive) return;
+            
+            updateProgress(data.message, data.percentage);
+            
+            if (data.percentage >= 100) {
+                source.close();
+                // Immediately load and display results
+                loadResultsAndShow().catch(err => console.error('Error loading results:', err));
+            } else if (data.percentage < 0) {
+                source.close();
+                appendLog('Exploration failed', 'error');
+                resetExploration();
+            }
+        } catch (err) {
+            console.error('Error processing progress:', err);
         }
     };
     
-    source.onerror = () => source.close();
+    source.onerror = () => {
+        try {
+            source.close();
+        } catch (e) {
+            // Ignore
+        }
+    };
 }
 
 async function loadResultsAndShow() {
@@ -227,36 +333,84 @@ function showSectionDirect(section) {
 }
 
 function listenForLogs() {
-    if (eventSources.logs) eventSources.logs.close();
+    if (eventSources.logs) {
+        try {
+            eventSources.logs.close();
+        } catch (e) {
+            // Ignore close errors
+        }
+    }
     
+    console.log('[SSE] Connecting to /api/logs...');
     const source = new EventSource('/api/logs');
     eventSources.logs = source;
     
-    source.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        if (data.keepalive) return;
-        appendLog(data.message, data.type || 'info');
+    source.onopen = () => {
+        console.log('[SSE] Logs connection opened');
     };
     
-    source.onerror = () => source.close();
+    source.onmessage = (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            if (data.keepalive) return;
+            
+            // Display log immediately (backend already batched it)
+            appendLog(data.message, data.type || 'info');
+            
+        } catch (err) {
+            console.error('[SSE] Error parsing log:', err);
+        }
+    };
+    
+    source.onerror = (err) => {
+        // Render any pending logs before closing
+        if (logRenderTimer) {
+            clearTimeout(logRenderTimer);
+            logRenderTimer = null;
+        }
+        renderLogQueue();
+        try {
+            source.close();
+        } catch (e) {
+            // Ignore close errors
+        }
+    };
 }
 
 function listenForStages() {
-    if (eventSources.stages) eventSources.stages.close();
+    if (eventSources.stages) {
+        try {
+            eventSources.stages.close();
+        } catch (e) {
+            // Ignore
+        }
+    }
     
     const source = new EventSource('/api/stages');
     eventSources.stages = source;
     
     source.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        if (data.keepalive) return;
-        updateStageIndicator(data.stage, data.status);
-        
-        document.getElementById('currentStageInfo').classList.remove('hidden');
-        document.getElementById('stageDescription').textContent = data.message || `Stage ${data.stage} ${data.status}`;
+        try {
+            const data = JSON.parse(event.data);
+            if (data.keepalive) return;
+            updateStageIndicator(data.stage, data.status);
+            
+            const stageInfo = document.getElementById('currentStageInfo');
+            const stageDesc = document.getElementById('stageDescription');
+            if (stageInfo) stageInfo.classList.remove('hidden');
+            if (stageDesc) stageDesc.textContent = data.message || `Stage ${data.stage} ${data.status}`;
+        } catch (err) {
+            console.error('Error processing stage update:', err);
+        }
     };
     
-    source.onerror = () => source.close();
+    source.onerror = () => {
+        try {
+            source.close();
+        } catch (e) {
+            // Ignore
+        }
+    };
 }
 
 // Progress & Stage Updates
@@ -305,11 +459,31 @@ async function stopAgent() {
 
 // Reset
 function resetExploration() {
-    document.getElementById('stopBtn').classList.add('hidden');
-    document.getElementById('startBtn').disabled = false;
-    document.getElementById('startBtn').classList.remove('opacity-50');
+    try {
+        document.getElementById('stopBtn').classList.add('hidden');
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('startBtn').classList.remove('opacity-50');
+    } catch (e) {
+        console.error('Error updating buttons:', e);
+    }
     
-    Object.values(eventSources).forEach(source => source && source.close());
+    // Render any pending logs before closing
+    if (logRenderTimer) {
+        clearTimeout(logRenderTimer);
+        logRenderTimer = null;
+    }
+    renderLogQueue();
+    
+    // Close all event sources safely
+    Object.values(eventSources).forEach(source => {
+        if (source) {
+            try {
+                source.close();
+            } catch (e) {
+                // Ignore close errors
+            }
+        }
+    });
     eventSources = {};
     
     resetStageIndicators();
@@ -713,32 +887,181 @@ async function loadComparison() {
         
         // Build comparison view
         const items = data.items.slice(0, 5); // Max 5 for comparison
+        const summary = data.comparison_summary || {};
         
         let html = `
-            <div class="comparison-chart">
-                <canvas id="comparisonChart"></canvas>
+            <!-- UX Score Comparison Chart -->
+            <div class="bg-zinc-900 border border-zinc-700 rounded-lg p-6 mb-6">
+                <h3 class="text-lg font-semibold text-white mb-4">UX Score Comparison</h3>
+                <div class="comparison-chart">
+                    <canvas id="comparisonChart"></canvas>
+                </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-${items.length} gap-4 mt-6">
+            
+            <!-- Common Features -->
+            ${summary.common_features && summary.common_features.length > 0 ? `
+            <div class="bg-zinc-900 border border-zinc-700 rounded-lg p-6 mb-6">
+                <h3 class="text-lg font-semibold text-white mb-4">
+                    <span class="text-green-400">✓</span> Common Features Across All Apps
+                </h3>
+                <div class="flex flex-wrap gap-2">
+                    ${summary.common_features.map(feature => `
+                        <span class="px-3 py-1 bg-green-900/30 text-green-400 rounded-full text-sm border border-green-700/50">
+                            ${feature}
+                        </span>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+            
+            <!-- Detailed App Comparison -->
+            <div class="grid grid-cols-1 lg:grid-cols-${Math.min(items.length, 3)} gap-6 mb-6">
         `;
         
         items.forEach(item => {
             const analysis = item.analysis_json || {};
+            const issues = item.issues || [];
+            const positives = item.positives || [];
+            const distinctFeatures = item.distinct_features || [];
+            
+            // Categorize issues by severity
+            const highIssues = issues.filter(i => i.severity === 'High');
+            const mediumIssues = issues.filter(i => i.severity === 'Medium');
+            const lowIssues = issues.filter(i => i.severity === 'Low');
+            
             html += `
-                <div class="bg-zinc-900 border border-zinc-700 rounded-lg p-4">
-                    <h4 class="font-semibold text-white mb-2">${item.app_name}</h4>
-                    <p class="text-zinc-500 text-sm mb-3">${new Date(item.completed_at).toLocaleDateString()}</p>
-                    <div class="space-y-2 text-sm">
-                        <div class="flex justify-between">
-                            <span class="text-zinc-400">UX Score</span>
-                            <span class="text-white font-semibold">${item.ux_score || '-'}</span>
+                <div class="bg-zinc-900 border border-zinc-700 rounded-lg p-5">
+                    <!-- App Header -->
+                    <div class="mb-4 pb-4 border-b border-zinc-700">
+                        <h4 class="font-bold text-white text-lg mb-1">${item.app_name}</h4>
+                        <p class="text-zinc-500 text-sm">${new Date(item.completed_at).toLocaleDateString()}</p>
+                    </div>
+                    
+                    <!-- UX Score Badge -->
+                    <div class="mb-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-zinc-400 text-sm">UX Score</span>
+                            <span class="text-2xl font-bold ${
+                                item.ux_score >= 8 ? 'text-green-400' : 
+                                item.ux_score >= 6 ? 'text-yellow-400' : 'text-red-400'
+                            }">${item.ux_score || '-'}<span class="text-sm text-zinc-500">/10</span></span>
                         </div>
-                        <div class="flex justify-between">
-                            <span class="text-zinc-400">Issues</span>
-                            <span class="text-white">${(analysis.issues || []).length}</span>
+                        <div class="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                            <div class="h-full ${
+                                item.ux_score >= 8 ? 'bg-green-500' : 
+                                item.ux_score >= 6 ? 'bg-yellow-500' : 'bg-red-500'
+                            }" style="width: ${(item.ux_score || 0) * 10}%"></div>
                         </div>
-                        <div class="flex justify-between">
-                            <span class="text-zinc-400">Positives</span>
-                            <span class="text-white">${(analysis.positive || []).length}</span>
+                    </div>
+                    
+                    <!-- Key Metrics -->
+                    <div class="grid grid-cols-2 gap-2 mb-4 p-3 bg-zinc-800/50 rounded">
+                        <div>
+                            <div class="text-xs text-zinc-500">Complexity</div>
+                            <div class="text-white font-semibold">${item.complexity_score || '-'}/10</div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-zinc-500">Screens</div>
+                            <div class="text-white font-semibold">${item.screens_discovered || '-'}</div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-zinc-500">Avg Depth</div>
+                            <div class="text-white font-semibold">${item.navigation_depth || '-'}</div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-zinc-500">Max Depth</div>
+                            <div class="text-white font-semibold">${item.max_depth || '-'}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- What Went Good -->
+                    ${positives.length > 0 ? `
+                    <div class="mb-4">
+                        <h5 class="text-green-400 font-semibold text-sm mb-2 flex items-center">
+                            <span class="mr-1">✓</span> What Went Good (${positives.length})
+                        </h5>
+                        <div class="space-y-2 max-h-40 overflow-y-auto">
+                            ${positives.slice(0, 3).map(pos => `
+                                <div class="p-2 bg-green-900/10 border border-green-700/30 rounded text-xs">
+                                    <div class="text-green-300 font-medium">${pos.aspect || 'Positive aspect'}</div>
+                                    <div class="text-zinc-400 mt-1">${pos.description || ''}</div>
+                                </div>
+                            `).join('')}
+                            ${positives.length > 3 ? `
+                                <div class="text-xs text-zinc-500 text-center">+${positives.length - 3} more</div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    ` : ''}
+                    
+                    <!-- What's Bad (Issues) -->
+                    ${issues.length > 0 ? `
+                    <div class="mb-4">
+                        <h5 class="text-red-400 font-semibold text-sm mb-2 flex items-center">
+                            <span class="mr-1">✗</span> Issues Found (${issues.length})
+                        </h5>
+                        <div class="space-y-1 mb-2">
+                            ${highIssues.length > 0 ? `
+                                <div class="flex items-center text-xs">
+                                    <span class="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                                    <span class="text-red-400">High: ${highIssues.length}</span>
+                                </div>
+                            ` : ''}
+                            ${mediumIssues.length > 0 ? `
+                                <div class="flex items-center text-xs">
+                                    <span class="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>
+                                    <span class="text-yellow-400">Medium: ${mediumIssues.length}</span>
+                                </div>
+                            ` : ''}
+                            ${lowIssues.length > 0 ? `
+                                <div class="flex items-center text-xs">
+                                    <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                    <span class="text-green-400">Low: ${lowIssues.length}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div class="space-y-2 max-h-40 overflow-y-auto">
+                            ${issues.slice(0, 3).map(issue => `
+                                <div class="p-2 bg-red-900/10 border border-red-700/30 rounded text-xs">
+                                    <div class="flex items-start justify-between mb-1">
+                                        <span class="text-red-300 font-medium">${issue.category || 'Issue'}</span>
+                                        <span class="badge badge-${issue.severity === 'High' ? 'high' : issue.severity === 'Medium' ? 'medium' : 'low'} text-xs px-1 py-0">
+                                            ${issue.severity}
+                                        </span>
+                                    </div>
+                                    <div class="text-zinc-400">${issue.description || ''}</div>
+                                </div>
+                            `).join('')}
+                            ${issues.length > 3 ? `
+                                <div class="text-xs text-zinc-500 text-center">+${issues.length - 3} more</div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    ` : ''}
+                    
+                    <!-- Distinct Features -->
+                    ${distinctFeatures.length > 0 ? `
+                    <div class="mb-2">
+                        <h5 class="text-blue-400 font-semibold text-sm mb-2">Unique Features</h5>
+                        <div class="flex flex-wrap gap-1">
+                            ${distinctFeatures.map(feature => `
+                                <span class="px-2 py-0.5 bg-blue-900/30 text-blue-400 rounded text-xs border border-blue-700/50">
+                                    ${feature}
+                                </span>
+                            `).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
+                    
+                    <!-- Error Handling Rating -->
+                    <div class="mt-3 pt-3 border-t border-zinc-700">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-zinc-500">Error Handling</span>
+                            <span class="px-2 py-1 rounded ${
+                                item.error_handling_rating === 'good' ? 'bg-green-900/30 text-green-400' :
+                                item.error_handling_rating === 'fair' ? 'bg-yellow-900/30 text-yellow-400' :
+                                'bg-zinc-700 text-zinc-400'
+                            }">${item.error_handling_rating || 'unknown'}</span>
                         </div>
                     </div>
                 </div>
@@ -746,6 +1069,36 @@ async function loadComparison() {
         });
         
         html += '</div>';
+        
+        // Add summary statistics
+        const avgScore = items.reduce((sum, item) => sum + (item.ux_score || 0), 0) / items.length;
+        const totalIssues = items.reduce((sum, item) => sum + (item.issues || []).length, 0);
+        const totalPositives = items.reduce((sum, item) => sum + (item.positives || []).length, 0);
+        
+        html += `
+            <div class="bg-zinc-900 border border-zinc-700 rounded-lg p-6">
+                <h3 class="text-lg font-semibold text-white mb-4">Overall Summary</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="text-center p-4 bg-zinc-800/50 rounded">
+                        <div class="text-2xl font-bold text-white">${avgScore.toFixed(1)}</div>
+                        <div class="text-sm text-zinc-400">Avg UX Score</div>
+                    </div>
+                    <div class="text-center p-4 bg-zinc-800/50 rounded">
+                        <div class="text-2xl font-bold text-red-400">${totalIssues}</div>
+                        <div class="text-sm text-zinc-400">Total Issues</div>
+                    </div>
+                    <div class="text-center p-4 bg-zinc-800/50 rounded">
+                        <div class="text-2xl font-bold text-green-400">${totalPositives}</div>
+                        <div class="text-sm text-zinc-400">Total Positives</div>
+                    </div>
+                    <div class="text-center p-4 bg-zinc-800/50 rounded">
+                        <div class="text-2xl font-bold text-blue-400">${summary.common_features ? summary.common_features.length : 0}</div>
+                        <div class="text-sm text-zinc-400">Common Features</div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
         document.getElementById('comparisonContent').innerHTML = html;
         
         // Render comparison chart
@@ -757,24 +1110,58 @@ async function loadComparison() {
                 datasets: [{
                     label: 'UX Score',
                     data: items.map(i => i.ux_score || 0),
-                    backgroundColor: 'rgba(255, 255, 255, 0.8)'
+                    backgroundColor: items.map(i => 
+                        i.ux_score >= 8 ? 'rgba(74, 222, 128, 0.8)' : 
+                        i.ux_score >= 6 ? 'rgba(250, 204, 21, 0.8)' : 
+                        'rgba(248, 113, 113, 0.8)'
+                    ),
+                    borderColor: items.map(i => 
+                        i.ux_score >= 8 ? 'rgb(34, 197, 94)' : 
+                        i.ux_score >= 6 ? 'rgb(234, 179, 8)' : 
+                        'rgb(239, 68, 68)'
+                    ),
+                    borderWidth: 2
                 }]
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: true,
                 plugins: {
-                    title: { display: true, text: 'UX Score Comparison', color: '#a1a1aa' },
-                    legend: { display: false }
+                    title: { 
+                        display: false
+                    },
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                        titleColor: '#fff',
+                        bodyColor: '#a1a1aa',
+                        padding: 12,
+                        displayColors: false
+                    }
                 },
                 scales: {
-                    y: { beginAtZero: true, max: 10, ticks: { color: '#71717a' }, grid: { color: '#27272a' } },
-                    x: { ticks: { color: '#a1a1aa' }, grid: { color: '#27272a' } }
+                    y: { 
+                        beginAtZero: true, 
+                        max: 10, 
+                        ticks: { color: '#71717a', font: { size: 12 } }, 
+                        grid: { color: '#27272a' },
+                        title: {
+                            display: true,
+                            text: 'UX Score',
+                            color: '#a1a1aa'
+                        }
+                    },
+                    x: { 
+                        ticks: { color: '#a1a1aa', font: { size: 12 } }, 
+                        grid: { color: '#27272a' }
+                    }
                 }
             }
         });
         
     } catch (error) {
         console.error('Error loading comparison:', error);
+        document.getElementById('comparisonContent').innerHTML = '<p class="text-red-500 text-center py-12">Error loading comparison data</p>';
     }
 }
 

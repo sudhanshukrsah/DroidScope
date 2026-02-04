@@ -109,19 +109,13 @@
 
       /* Stage indicators */
       .stage-indicator {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
         font-weight: 600;
         font-size: 0.875rem;
-        transition: all 0.3s;
+     
       }
-      .stage-pending { background: #44403c; color: #a8a29e; border: 2px solid #57534e; }
-      .stage-running { background: #1e40af; color: #93c5fd; border: 2px solid #3b82f6; animation: pulse 2s infinite; }
-      .stage-completed { background: #166534; color: #86efac; border: 2px solid #22c55e; }
+      .stage-pending { background: #1C1917; color: #a8a29e; border: 2px solid #57534e; }
+      .stage-running { background: #44403B; color: #93c5fd; border: 2px solid #3b82f6; animation: pulse 2s infinite; }
+      .stage-completed { background: #1C1917; color: #86efac; border: 2px solid #22c55e; }
       .stage-failed { background: #991b1b; color: #fca5a5; border: 2px solid #ef4444; }
 
       @keyframes pulse {
@@ -134,6 +128,7 @@
         position: fixed;
         bottom: 24px;
         left: 50%;
+        
         transform: translateX(-50%);
         background: rgba(28, 25, 23, 0.95);
         backdrop-filter: blur(10px);
@@ -145,8 +140,8 @@
         z-index: 50;
       }
       .nav-btn {
-        padding: 10px 16px;
-        border-radius: 10px;
+        padding: 10px 10px;
+       
         font-size: 0.875rem;
         font-weight: 500;
         color: #a8a29e;
@@ -155,14 +150,14 @@
         cursor: pointer;
         transition: all 0.2s;
       }
-      .nav-btn:hover { background: #44403c; color: #fafafa; }
+      .nav-btn:hover { background: #2e2b29; color: #fafafa; }
       .nav-btn.active { background: #44403c; color: #ffe3e3; }
 
       .device-indicator {
         width: 10px;
         height: 10px;
         border-radius: 50%;
-        margin-left: 8px;
+        
         animation: pulse-device 2s infinite;
       }
       .device-connected { background: #22c55e; box-shadow: 0 0 8px #22c55e; }
@@ -192,33 +187,32 @@
     </style>
   </head>
   <body class="h-screen">
-    <div class="grid-background"></div>
 
     <!-- Main Layout -->
     <div class="relative z-10 flex bg-stone-800 h-full">
       <!-- Left Panel -->
-      <aside class="fixed left-8 top-8 bottom-8 w-[22rem] flex flex-col gap-6">
+      <aside class="fixed max-h-screen left-8 top-8 bottom-8 w-[22rem] flex flex-col gap-6">
         <!-- Header -->
         <div class="bg-stone-900 border border-neutral-500 rounded-2xl px-6 py-5 flex items-center justify-between">
           <h1 class="text-2xl font-bold text-stone-200">DroidScope</h1>
           <button onclick="openSettings()" class="p-2 rounded-xl hover:bg-stone-800 transition-colors" title="Settings">
-            <svg
-  xmlns="http://www.w3.org/2000/svg"
-  width="24"
-  height="24"
-  viewBox="0 0 24 24"
-  fill="none"
-  stroke="currentColor"
-  stroke-width="2"
-  stroke-linecap="round"
-  stroke-linejoin="round"
-  class="lucide lucide-bolt-icon text-stone-200 lucide-bolt"
->
-  <path
-    d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
-  />
-  <circle cx="12" cy="12" r="4" />
-</svg>
+              <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="lucide lucide-bolt-icon text-stone-200 lucide-bolt"
+                  >
+                      <path
+                  d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
+              />
+              <circle cx="12" cy="12" r="4" />
+              </svg>
 
           </button>
         </div>
@@ -278,9 +272,10 @@
               <option value="Product Manager">Product Manager</option>
             </select>
           </div>
-          <div>
-            
-            <textarea id="customNavigation" placeholder="e.g., Go to profile, then settings..." rows="2" class="input-field bg-stone-800 rounded-xl resize-none"></textarea>
+          <div class="overflow-hidden inline-flex relative bg-stone-800 items-start rounded-xl">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide ml-3 translate-y-2 text-stone-300 lucide-locate-fixed-icon lucide-locate-fixed"><line x1="2" x2="5" y1="12" y2="12"/><line x1="19" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="5"/><line x1="12" x2="12" y1="19" y2="22"/><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3"/></svg>
+
+            <textarea id="customNavigation" placeholder="Custom Navigation Input" rows="2" class="input-field bg-stone-800 rounded-xl resize-none"></textarea>
           </div>
 
 
@@ -292,83 +287,129 @@
             <label for="saveToMemory" class="text-sm text-stone-400">Save to library</label>
           </div>
 
-          <button onclick="startTest()" id="startBtn" class="w-full py-3 bg-stone-500 hover:bg-stone-600 text-stone-200 font-semibold rounded-xl transition-colors">
-            Start Exploration
+          <button onclick="startTest()" id="startBtn" class=" py-3 bg-stone-500 justify-center flex items-center hover:bg-stone-600 text-stone-200 font-semibold rounded-xl transition-colors">
+            <span class="inline-flex  gap-2 flex-row">
+
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-radar-icon lucide-radar"><path d="M19.07 4.93A10 10 0 0 0 6.99 3.34"/><path d="M4 6h.01"/><path d="M2.29 9.62A10 10 0 1 0 21.31 8.35"/><path d="M16.24 7.76A6 6 0 1 0 8.23 16.67"/><path d="M12 18h.01"/><path d="M17.99 11.66A6 6 0 0 1 15.77 16.67"/><circle cx="12" cy="12" r="2"/><path d="m13.41 10.59 5.66-5.66"/></svg>
+              Start Exploration
+            </span>
           </button>
         </div>
 
         <!-- Console Logs -->
-    </div>
-    <div class="bg-stone-900 border border-neutral-500 rounded-2xl h-full flex flex-col ">
-     <div class="px-2 py-2  gap-3 flex items-center w-full h-full flex-col justify-between">
-       <span class="text-sm font-medium items-center px-2 pt-2 flex justify-between w-full text-stone-400">
-        <span class="flex gap-2 items-center">
+        </div>
+        <div class="bg-stone-900 border border-neutral-500 rounded-2xl h-full flex flex-col ">
+        <div class=" px-2 py-2  gap-3 flex items-center w-full h-fit flex-col justify-between">
+          <span class="text-sm font-medium items-center px-2 pt-2 flex justify-between w-full text-stone-400">
+            <span class="flex gap-2 items-center">
 
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-terminal-icon lucide-terminal"><path d="M12 19h8"/><path d="m4 17 6-6-6-6"/></svg>
-    
-            Console
-        </span>
-           <div class="flex gap-2">
-             <button id="stopBtn" onclick="stopAgent()" class="hidden px-2 py-1 text-xs border border-red-600 text-red-400 rounded hover:bg-red-600 hover:text-white transition-colors">Stop</button>
-             <button onclick="clearLogs()" class="px-2 py-1 text-xs border border-stone-600 text-stone-400 rounded hover:bg-stone-700 transition-colors">Clear</button>
-           </div>
-       </span>
-       <div id="terminalOutput" class="terminal bg-stone-900 h-full w-full  overflow-y-auto rounded-3xl border-t-1 border-neutral-500 p-3 bg-stone-950">
-         <div class="text-stone-500">[00:00:00] Waiting for exploration...</div>
-       </div>
-     </div>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-terminal-icon lucide-terminal"><path d="M12 19h8"/><path d="m4 17 6-6-6-6"/></svg>
         
+                Console
+            </span>
+            <div class="flex gap-2">
+              <button id="stopBtn" onclick="stopAgent()" class="hidden px-2 py-1 text-xs border border-red-600 text-red-400 rounded hover:bg-red-600 hover:text-white transition-colors">Stop</button>
+              <button onclick="clearLogs()" class="px-2 py-1 text-xs border border-stone-600 text-stone-400 rounded hover:bg-stone-700 transition-colors">Clear</button>
+            </div>
+          </span>
+          <div id="terminalOutput" class="terminal bg-stone-900 h-60 w-full  overflow-y-auto rounded-3xl border-t-1 border-neutral-500 p-3 bg-stone-950">
+            <div class="text-stone-500">[00:00:00] Waiting for exploration...</div>
+
+            
+          </div>
+        </div>
+            
       </aside>
 
       <!-- Right Content Area -->
-      <div class="flex-1 ml-[26rem] w-[32] overflow-y-auto pb-24">
+      <div class=" ml-[26rem] w-full overflow-y-auto pb-24">
         <!-- Scan Section -->
-        <div id="scanSection" class="p-8">
-          <h2 class="text-2xl font-bold text-white mb-6">Exploration Progress</h2>
+        <div id="scanSection" class="p-8 w-[32rem] mt-20 translate-x-[19.5vw]">
+          
+          
+          <!-- Progress Bar -->
+          <div class="bg-stone-900 border border-stone-700 rounded-2xl p-6 mb-6">
+              <div class="flex items-center justify-between">
+              <span id="progressMessage" class="text-stone-300">Ready to start...
+                <div id="currentStageInfo" class="bg-stone-900 ">
+                  <h3 class="text-lg font-semibold hidden text-white ">Current Stage</h3>
+                  <p id="stageDescription" class="text-stone-400"></p>
+                </div>
+              </span>
+              <span id="progressPercent" class="text-white text-7xl font-semibold ">0%</span>
+            </div>
+            <!-- Current Stage Info -->
+            <div class="h-2 mt-2 bg-stone-800 rounded-full overflow-hidden">
+                <div id="progressBar" class="h-full bg-gradient-to-r from-white to-stone-300 transition-all duration-500" style="width: 0%"></div>
+            </div>
+          </div>
           
           <!-- Stage Indicators -->
-          <div class="flex items-center justify-center gap-4 mb-8">
-            <div class="flex flex-col items-center">
-              <div id="stage1" class="stage-indicator stage-pending">1</div>
-              <span class="text-xs text-stone-500 mt-2">Basic</span>
+  
+          <div class="flex relative flex-col max-w-4xl items-center justify-center gap-4 mb-8">
+            <span class="absolute inline-flex flex-col justify-between h-[18rem] rounded-l-2xl -translate-x-[15.5rem] border-4  border-r-0 border-stone-500 w-[3rem]">
+              <span class="bg-amber-400   border-stone-500 w-full"></span>
+              <span class="bg-amber-400  border-b-4 border-stone-500 w-full"></span>
+              <span class="bg-amber-400  border-b-4 border-stone-500 w-full"></span>
+              <span class="bg-amber-400 border-stone-500 w-full"></span>
+            </span>
+            <div class="flex w-full  items-center">
+                <div id="stage1" class="stage-indicator  px-5 w-full h-20 rounded-2xl items-center flex justify-between  stage-pending"><span class="w-6 h-6 p-2 inline-flex items-center rounded-full bg-stone-800 ">1</span>
+  
+                    <span class="text-sm text-stone-500 ">Basic Exploration</span>
+                </div>
             </div>
-            <div class="w-12 h-0.5 bg-stone-700"></div>
-            <div class="flex flex-col items-center">
-              <div id="stage2" class="stage-indicator stage-pending">2</div>
-              <span class="text-xs text-stone-500 mt-2">Persona</span>
+          
+            <div class="flex  w-full items-center">
+              <div id="stage2" class="stage-indicator px-5 w-full h-20 rounded-2xl items-center flex justify-between  stage-pending"><span class="w-6 h-6 p-2 inline-flex items-center rounded-full bg-stone-800">2</span>
+                  <span class="text-sm text-stone-500 ">Persona Based Analysis</span>
+              </div>
             </div>
-            <div class="w-12 h-0.5 bg-stone-700"></div>
-            <div class="flex flex-col items-center">
-              <div id="stage3" class="stage-indicator stage-pending">3</div>
-              <span class="text-xs text-stone-500 mt-2">Stress</span>
+            
+            <div class="flex w-full   items-center">
+              <div id="stage3" class="stage-indicator px-5 w-full h-20 rounded-2xl items-center flex justify-between  stage-pending"><span class="w-6 h-6 p-2 inline-flex items-center rounded-full bg-stone-800">3</span>
+  
+                  <span class="text-sm text-stone-500">Stress Testing</span>
+              </div>
             </div>
-            <div class="w-12 h-0.5 bg-stone-700"></div>
-            <div class="flex flex-col items-center">
-              <div id="stage4" class="stage-indicator stage-pending">4</div>
-              <span class="text-xs text-stone-500 mt-2">Analysis</span>
+            
+            <div class="flex w-full  items-center">
+              <div id="stage4" class="stage-indicator px-5 w-full h-20 rounded-2xl items-center flex justify-between  stage-pending"> <span class="w-6 h-6 p-2 inline-flex items-center rounded-full bg-stone-800">4</span>
+  
+                  <span class="text-sm text-stone-500 mt-2">Final Compliation</span>
+              </div>
             </div>
+            
           </div>
-
-          <!-- Progress Bar -->
-          <div class="bg-stone-900 border border-stone-700 rounded-lg p-6 mb-6">
-            <div class="flex items-center justify-between mb-2">
-              <span id="progressMessage" class="text-stone-300">Ready to start...</span>
-              <span id="progressPercent" class="text-white font-semibold">0%</span>
-            </div>
-            <div class="h-2 bg-stone-800 rounded-full overflow-hidden">
-              <div id="progressBar" class="h-full bg-gradient-to-r from-white to-stone-300 transition-all duration-500" style="width: 0%"></div>
-            </div>
-          </div>
-
-          <!-- Current Stage Info -->
-          <div id="currentStageInfo" class="bg-stone-900 border border-stone-700 rounded-lg p-6 ">
-            <h3 class="text-lg font-semibold text-white mb-2">Current Stage</h3>
-            <p id="stageDescription" class="text-stone-400"></p>
-          </div>
+          
         </div>
+        <!-- Bottom Navigation -->
+    <div class="fixed bottom-8 left-[46%] rounded-2xl flex z-50 flex">
+        <div class="flex py-2 gap-3 bg-stone-900 rounded-l-2xl px-3 border border-neutral-500">
+        <button class="nav-btn rounded-xl active" onclick="showSection('scan', this)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-radar-icon lucide-radar"><path d="M19.07 4.93A10 10 0 0 0 6.99 3.34"/><path d="M4 6h.01"/><path d="M2.29 9.62A10 10 0 1 0 21.31 8.35"/><path d="M16.24 7.76A6 6 0 1 0 8.23 16.67"/><path d="M12 18h.01"/><path d="M17.99 11.66A6 6 0 0 1 15.77 16.67"/><circle cx="12" cy="12" r="2"/><path d="m13.41 10.59 5.66-5.66"/></svg>
+        </button>
+        <button class="nav-btn rounded-xl" onclick="showSection('results', this)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-notepad-text-icon lucide-notepad-text"><path d="M8 2v4"/><path d="M12 2v4"/><path d="M16 2v4"/><rect width="16" height="18" x="4" y="4" rx="2"/><path d="M8 10h6"/><path d="M8 14h8"/><path d="M8 18h5"/></svg>
+        </button>
+        <button class="nav-btn rounded-xl" onclick="showSection('library', this)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-square-library-icon lucide-square-library"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 7v10"/><path d="M11 7v10"/><path d="m15 7 2 10"/></svg>
+        </button>
+        <button class="nav-btn rounded-xl" onclick="showSection('compare', this)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-scale-icon lucide-scale"><path d="M12 3v18"/><path d="m19 8 3 8a5 5 0 0 1-6 0zV7"/><path d="M3 7h1a17 17 0 0 0 8-2 17 17 0 0 0 8 2h1"/><path d="m5 8 3 8a5 5 0 0 1-6 0zV7"/><path d="M7 21h10"/></svg>
+        </button>
+        </div>
+      <div class="flex px-5 items-center gap-3 bg-stone-900 rounded-r-2xl  border border-l-0 border-neutral-500">
+        <div class="flex items-center gap-3 w-[11rem] p-2 bg-stone-800 rounded-full">
+            <div id="deviceIndicator" class="ml-2 device-indicator device-disconnected"></div>
+            <span id="deviceStatusText" class="text-xs whitespace-nowrap text-red-400">Device not connected</span>
+        </div>  
+      </div>
+    </div>
+
 
         <!-- Results Section -->
-        <div id="resultsSection" class="p-8 hidden">
+        <div id="resultsSection" class="p-8 max-w-7xl hidden">
           <h2 class="text-2xl font-bold text-white mb-6">Analysis Results</h2>
           
           <!-- Summary -->
@@ -507,19 +548,10 @@
           </div>
         </div>
       </div>
+
     </div>
 
-    <!-- Bottom Navigation -->
-    <div class="bottom-nav">
-      <button class="nav-btn active" onclick="showSection('scan', this)">Scan</button>
-      <button class="nav-btn" onclick="showSection('results', this)">Results</button>
-      <button class="nav-btn" onclick="showSection('library', this)">Library</button>
-      <button class="nav-btn" onclick="showSection('compare', this)">Compare</button>
-      <div class="flex items-center px-3">
-        <span class="text-xs text-stone-500">Device</span>
-        <div id="deviceIndicator" class="device-indicator device-disconnected"></div>
-      </div>
-    </div>
+    
 
     <!-- Settings Modal -->
     <div id="settingsModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">

@@ -4,7 +4,10 @@ Stage-based exploration runner with persona support and database storage
 import asyncio
 import json
 import os
+import sys
+import threading
 from datetime import datetime
+from contextlib import redirect_stdout, redirect_stderr
 from dotenv import load_dotenv
 from llama_index.llms.openai_like import OpenAILike
 from droidrun import DroidAgent
@@ -16,6 +19,85 @@ from database import (
 )
 
 load_dotenv()
+
+
+class LogCapture:
+    """Captures stdout/stderr - accumulates for 3 seconds then sends via callback"""
+    def __init__(self, log_callback, log_type='info'):
+        self.log_callback = log_callback
+        self.log_type = log_type
+        self.text_buffer = ""
+        self.last_flush_time = datetime.now()
+        self.flush_interval = 3  # Reduced to 3 seconds for better responsiveness
+        self.original_stdout = sys.__stdout__
+        self.lock = threading.Lock()
+        self.running = True
+        
+        # Start background flush thread
+        self.flush_thread = threading.Thread(target=self._auto_flush_loop, daemon=True)
+        self.flush_thread.start()
+    
+    def _auto_flush_loop(self):
+        """Flush buffer every 3 seconds"""
+        while self.running:
+            try:
+                threading.Event().wait(self.flush_interval)
+                with self.lock:
+                    if self.text_buffer.strip():
+                        self._send_buffer()
+            except Exception as e:
+                if self.original_stdout:
+                    self.original_stdout.write(f"[LogCapture] Flush error: {e}\n")
+                    self.original_stdout.flush()
+    
+    def _send_buffer(self):
+        """Send accumulated buffer - must be called with lock held"""
+        try:
+            if self.text_buffer.strip() and self.log_callback:
+                self.log_callback(self.text_buffer.strip(), self.log_type)
+                
+                # Server console log
+                if self.original_stdout:
+                    self.original_stdout.write(f"[BATCH-{self.log_type.upper()}] {self.text_buffer}")
+                    self.original_stdout.flush()
+                
+                self.text_buffer = ""
+                self.last_flush_time = datetime.now()
+        except Exception as e:
+            if self.original_stdout:
+                self.original_stdout.write(f"[LogCapture] Send error: {e}\n")
+                self.original_stdout.flush()
+            self.text_buffer = ""  # Clear buffer on error
+    
+    def write(self, message):
+        try:
+            with self.lock:
+                self.text_buffer += message
+        except Exception:
+            pass  # Silently fail to avoid breaking the agent
+        return len(message)
+    
+    def flush(self):
+        try:
+            with self.lock:
+                self._send_buffer()
+            if self.original_stdout:
+                self.original_stdout.flush()
+        except Exception:
+            pass
+    
+    def isatty(self):
+        return False
+    
+    def close(self):
+        """Flush and stop"""
+        self.running = False
+        try:
+            with self.lock:
+                self._send_buffer()
+        except Exception:
+            pass
+
 
 STAGE_NAMES = {
     1: 'Basic Exploration',
@@ -283,15 +365,23 @@ class StageExplorationRunner:
             persona_prompt = load_prompt(f'persona_{self.persona_slug}')
             persona_prompt = format_prompt(persona_prompt, app_name=self.app_name, category=self.category)
             
-            # Load stage prompt
+            # Load stage prompt with custom navigation if provided
             stage_template = load_prompt('stage2_persona_analysis')
+            
+            custom_instruction = ""
+            if self.custom_navigation:
+                custom_instruction = f"Follow these custom navigation instructions: {self.custom_navigation}"
+            else:
+                custom_instruction = "No custom navigation provided. Explore naturally as the persona would."
+            
             goal = format_prompt(
                 stage_template,
                 app_name=self.app_name,
                 category=self.category,
                 persona=self.persona,
                 persona_slug=self.persona_slug,
-                max_depth=self.max_depth
+                max_depth=self.max_depth,
+                custom_navigation_instruction=custom_instruction
             )
             
             # Combine prompts
@@ -462,8 +552,22 @@ class StageExplorationRunner:
     
     async def _run_agent(self, goal, stage_num, stage_id):
         """Run DroidAgent with given goal"""
+        # Setup stdout/stderr capture for this agent run
+        stdout_capture = LogCapture(self.log_callback, 'info') if self.log_callback else None
+        stderr_capture = LogCapture(self.log_callback, 'error') if self.log_callback else None
+        
+        # Save original stdout/stderr
+        original_stdout = sys.stdout
+        original_stderr = sys.stderr
+        
         try:
             self.log(f"Initializing agent for stage {stage_num}...", 'info')
+            
+            # Replace stdout/stderr with our captures
+            if stdout_capture:
+                sys.stdout = stdout_capture
+            if stderr_capture:
+                sys.stderr = stderr_capture
             
             config = DroidrunConfig()
             # Set max_steps based on stage (stress test gets less)
@@ -481,29 +585,22 @@ class StageExplorationRunner:
             self.log(f"Agent running for stage {stage_num}...", 'info')
             
             # Run agent with periodic stop checking
-            import asyncio
+            agent_task = agent.run()
+            result_future = asyncio.ensure_future(agent_task)
             
-            async def run_with_stop_check():
-                """Run agent while checking stop flag periodically"""
-                # Start the agent
-                agent_task = agent.run()
-                result_future = asyncio.ensure_future(agent_task)
-                
-                while not result_future.done():
-                    # Check stop flag every 2 seconds
-                    await asyncio.sleep(2)
-                    if self.stop_flag and self.stop_flag.is_set():
-                        self.log("Stop requested - cancelling agent", 'warning')
-                        result_future.cancel()
-                        try:
-                            await result_future
-                        except asyncio.CancelledError:
-                            self.log("Agent cancelled successfully", 'warning')
-                            return None
-                
-                return await result_future
+            while not result_future.done():
+                # Check stop flag every 2 seconds
+                await asyncio.sleep(2)
+                if self.stop_flag and self.stop_flag.is_set():
+                    self.log("Stop requested - cancelling agent", 'warning')
+                    result_future.cancel()
+                    try:
+                        await result_future
+                    except asyncio.CancelledError:
+                        self.log("Agent cancelled successfully", 'warning')
+                        return False, 'Stopped by user'
             
-            result = await run_with_stop_check()
+            result = await result_future
             
             if result is None:
                 return False, 'Stopped by user'
@@ -525,6 +622,28 @@ class StageExplorationRunner:
         except Exception as e:
             self.log(f"Agent error in stage {stage_num}: {e}", 'error')
             return False, ''
+        finally:
+            # Restore original stdout/stderr
+            try:
+                sys.stdout = original_stdout
+                sys.stderr = original_stderr
+            except Exception as e:
+                if original_stdout:
+                    original_stdout.write(f"[ERROR] Failed to restore stdout/stderr: {e}\n")
+            
+            # Close captures to flush remaining buffers
+            if stdout_capture:
+                try:
+                    stdout_capture.close()
+                except Exception as e:
+                    if original_stdout:
+                        original_stdout.write(f"[ERROR] Failed to close stdout capture: {e}\n")
+            if stderr_capture:
+                try:
+                    stderr_capture.close()
+                except Exception as e:
+                    if original_stdout:
+                        original_stdout.write(f"[ERROR] Failed to close stderr capture: {e}\n")
     
     def _build_analysis_prompt(self, combined_content):
         """Build the final analysis prompt"""

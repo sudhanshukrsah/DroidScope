@@ -19,6 +19,55 @@ generating comprehensive analysis reports with real-time execution logs and prof
 
 ---
 
+## 🆕 What's New
+
+### Latest Updates (February 2026)
+
+<table>
+<tr>
+<td width="40%"><b>🔄 Advanced Comparison View</b></td>
+<td width="60%">
+Complete redesign of the comparison screen with:
+<ul>
+<li>Common features identification across all apps</li>
+<li>Distinct/unique features per app</li>
+<li>Detailed "What went good" sections</li>
+<li>"What's bad" with severity categorization (High/Medium/Low)</li>
+<li>Enhanced metrics: complexity score, navigation depth, screens discovered</li>
+<li>Color-coded UX score visualization (green/yellow/red)</li>
+<li>Summary statistics dashboard</li>
+<li>Improved card layout with better visual hierarchy</li>
+</ul>
+</td>
+</tr>
+<tr>
+<td><b>📊 Enhanced Data Extraction</b></td>
+<td>
+Backend improvements to extract more comparison data:
+<ul>
+<li>Feature extraction from core flows, reused patterns, and positive aspects</li>
+<li>Automated common vs. distinct feature analysis</li>
+<li>Issue categorization by severity</li>
+<li>Error handling quality ratings</li>
+</ul>
+</td>
+</tr>
+<tr>
+<td><b>🎨 UI/UX Improvements</b></td>
+<td>
+<ul>
+<li>Better visual distinction between apps in comparison</li>
+<li>Progress bars for UX scores</li>
+<li>Scrollable sections for long lists</li>
+<li>Responsive grid layouts (adapts to 1-5 apps)</li>
+<li>Improved badge styling and color schemes</li>
+</ul>
+</td>
+</tr>
+</table>
+
+---
+
 ## 📚 Quick Reference
 
 <table>
@@ -111,6 +160,7 @@ python verify_setup.py # Check configuration
 - **Visual Reports** - Interactive Chart.js visualizations with 8 stat cards
 - **Card-Based Layout** - Professional result cards with metadata
 - **Rounded Corners** - Modern UI with consistent border-radius
+- **Advanced Comparison** - Side-by-side app comparison with detailed metrics
 
 </td>
 <td width="50%" valign="top">
@@ -122,6 +172,7 @@ python verify_setup.py # Check configuration
 - **Safety First** - Avoids destructive actions
 - **Device Verification** - Pre-flight droidrun ping
 - **Schema-Agnostic** - Backward & forward compatible JSON handling
+- **Multi-App Analysis** - Compare features, issues, and UX scores across apps
 
 </td>
 </tr>
@@ -141,6 +192,29 @@ python verify_setup.py # Check configuration
 - **Autonomous Navigation** - AI explores like humans
 - **Breadth-First Search** - Comprehensive coverage
 - **Structured Output** - Navigation graph JSON + analysis blocks
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+### 📊 Comparison Features (NEW)
+- **Common Features** - Identifies shared patterns across apps
+- **Distinct Features** - Highlights unique aspects per app
+- **Issue Analysis** - Categorizes problems by severity (High/Medium/Low)
+- **Positive Insights** - What went well in each app
+- **Metric Comparison** - Complexity, depth, screens, error handling
+- **Visual Charts** - Color-coded UX score comparison graphs
+
+</td>
+<td width="50%" valign="top">
+
+### 🗄️ Data Management
+- **SQLite Database** - Persistent storage for all explorations
+- **Library View** - Browse and filter past results
+- **Stage Tracking** - Multi-stage exploration with progress
+- **Persona Analysis** - Test from different user perspectives
+- **Export & Compare** - Save comparison snapshots
 
 </td>
 </tr>
@@ -442,6 +516,21 @@ Use slider (3-12):
 </ul>
 </td>
 </tr>
+<tr>
+<td align="center">6️⃣</td>
+<td><b>Compare Results (NEW)</b></td>
+<td>
+Navigate to the Compare tab to:
+<ul>
+<li>🔄 Compare multiple apps side-by-side</li>
+<li>🎯 View common vs. distinct features</li>
+<li>✅ See what went good across apps</li>
+<li>❌ Identify issues by severity level</li>
+<li>📊 Compare UX scores, complexity, and depth</li>
+<li>💾 Save comparison snapshots</li>
+</ul>
+</td>
+</tr>
 </table>
 
 ---
@@ -485,6 +574,7 @@ Use slider (3-12):
 | `agent_result.txt` | Raw exploration results with markdown report |
 | `ux_analysis_blocks.json` | Comprehensive UX analysis with 12 metric categories |
 | `trajectories/[session]/` | Session data including screenshots and actions |
+| `droidscope.db` | SQLite database with all exploration results and comparisons |
 
 ### Metrics Analyzed
 
@@ -511,6 +601,28 @@ Use slider (3-12):
 
 </td>
 </tr>
+<tr>
+<td width="50%" valign="top">
+
+**Comparison Metrics (NEW)**
+- Common features across apps
+- Unique/distinct features per app
+- Issue distribution by severity
+- Positive patterns identified
+- Error handling quality rating
+
+</td>
+<td width="50%" valign="top">
+
+**Complexity & Coverage**
+- Complexity score (1-10)
+- Average navigation depth
+- Screens discovered count
+- Successful action percentage
+- Clickable elements found
+
+</td>
+</tr>
 </table>
 
 ### Report Sections
@@ -520,6 +632,40 @@ Use slider (3-12):
 - **Strengths** - Positive UX patterns with evidence
 - **Issues** - Categorized problems with severity, location, and impact
 - **Recommendations** - Prioritized improvements with effort estimates
+
+### Comparison View (NEW)
+
+The enhanced comparison screen allows you to:
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+**Feature Analysis**
+- 🟢 **Common Features** - Patterns shared across all compared apps
+- 🔵 **Distinct Features** - Unique aspects of each app
+- 📊 **Feature Extraction** - From core flows, reused patterns, and positive aspects
+
+</td>
+<td width="50%" valign="top">
+
+**Quality Assessment**
+- ✅ **What Went Good** - Top positive aspects with descriptions
+- ❌ **What's Bad** - Issues categorized by severity (High/Medium/Low)
+- 📈 **Metrics Comparison** - UX score, complexity, depth, screens
+- 🎯 **Error Handling** - Quality ratings across apps
+
+</td>
+</tr>
+</table>
+
+**Comparison Features:**
+- Side-by-side app cards with color-coded UX scores
+- Visual progress bars (green/yellow/red based on score)
+- Issue severity breakdown with counts
+- Summary statistics (avg score, total issues, total positives)
+- Interactive chart with color-coded bars
+- Responsive grid layout (up to 5 apps)
 
 ---
 
@@ -999,27 +1145,37 @@ You should see:
 ## 📁 Project Structure
 
 ```
-DROIDRUN/
-├── app.py                      # Flask web server with SSE
-├── exploration_runner.py       # Category-aware exploration
+DroidScope/
+├── app.py                      # Flask web server with SSE & comparison API
+├── staged_runner.py            # Multi-stage exploration runner
+├── exploration_runner.py       # Category-aware exploration (legacy)
 ├── ux_analyzer.py              # UX analysis engine
+├── database.py                 # SQLite database operations
+├── json_to_db.py               # Import explorations to database
 ├── verify_setup.py             # Pre-flight checks
 ├── utils.py                    # Shared utilities
+├── droidscope.db               # SQLite database (auto-created)
 ├── templates/
-│   └── index.html              # DroidScope web UI
+│   ├── index_new.html          # Main web UI with comparison view
+│   └── index.html              # Legacy UI
 ├── static/
-│   ├── style.css               # Sharp dark theme (2px borders)
-│   └── script.js               # Frontend logic + SSE
+│   ├── script_new.js           # Frontend logic + SSE + comparison
+│   ├── script.js               # Legacy frontend
+│   └── icons/                  # UI icons
 ├── prompts/
 │   ├── agent_goal.txt          # Exploration instructions
-│   └── analysis_prompt.txt     # UX analysis template
+│   ├── analysis_prompt_v2.txt  # UX analysis template
+│   ├── stage1_basic_exploration.txt
+│   ├── stage2_persona_analysis.txt
+│   ├── stage3_stress_exploration.txt
+│   └── stage4_analysis.txt
 ├── requirements.txt            # Dependencies
 ├── .env                        # API_KEY (gitignored)
 ├── trajectories/               # Session data (gitignored)
 └── venv/                       # Virtual environment (gitignored)
 ```
 
-> **💡 Note:** `ux_flow_explorer.py` is the legacy CLI tool. Use the web interface (`app.py`) for the best experience.
+> **💡 Note:** The app uses `index_new.html` and `script_new.js` for the enhanced interface with comparison features.
 
 ---
 
@@ -1109,6 +1265,56 @@ On startup, `verify_setup.py` runs `droidrun ping` to ensure:
 <td>Quantitative measurements</td>
 </tr>
 </table>
+
+### 🔄 Advanced Comparison (NEW)
+
+The comparison view provides comprehensive multi-app analysis:
+
+<table>
+<tr>
+<th width="30%">Feature</th>
+<th>Description</th>
+</tr>
+<tr>
+<td>🟢 <b>Common Features</b></td>
+<td>Automatically identifies patterns and features shared across all compared apps (e.g., "Bottom Navigation Bar", "Like Button")</td>
+</tr>
+<tr>
+<td>🔵 <b>Distinct Features</b></td>
+<td>Highlights unique aspects of each app that differentiate it from others</td>
+</tr>
+<tr>
+<td>✅ <b>What Went Good</b></td>
+<td>Shows top 3 positive aspects per app with detailed descriptions and locations</td>
+</tr>
+<tr>
+<td>❌ <b>What's Bad</b></td>
+<td>Issues categorized by severity:<br>
+• <b style="color:red">High</b> - Critical UX problems<br>
+• <b style="color:orange">Medium</b> - Moderate issues<br>
+• <b style="color:green">Low</b> - Minor improvements
+</td>
+</tr>
+<tr>
+<td>📊 <b>Metrics Dashboard</b></td>
+<td>Displays UX Score, Complexity Score, Avg/Max Depth, Screens Discovered, Error Handling rating</td>
+</tr>
+<tr>
+<td>🎨 <b>Visual Charts</b></td>
+<td>Color-coded bar charts (green ≥8, yellow ≥6, red <6) with interactive tooltips</td>
+</tr>
+<tr>
+<td>📈 <b>Summary Stats</b></td>
+<td>Overall comparison showing Average UX Score, Total Issues, Total Positives, Common Features count</td>
+</tr>
+</table>
+
+**How to Use Comparison:**
+1. Navigate to the **Compare** tab in the web interface
+2. Select a **category** (e.g., Social Media, E-commerce)
+3. Choose a **persona** (e.g., QA Engineer, Product Manager)
+4. View side-by-side comparison of up to 5 apps
+5. Analyze common patterns, unique features, and quality metrics
 
 ---
 

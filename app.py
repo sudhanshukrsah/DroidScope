@@ -34,35 +34,79 @@ current_exploration_thread = None
 current_request_id = None
 
 class LogCapture:
-    """Captures stdout/stderr and sends to SSE"""
-    def __init__(self, log_callback, log_type='info'):
-        self.log_callback = log_callback
+    """Captures stdout/stderr - accumulates for 5 seconds then sends as batch"""
+    def __init__(self, log_type='info'):
         self.log_type = log_type
-        self.buffer = []
+        self.text_buffer = ""  # Accumulate all text
+        self.last_flush_time = datetime.now()
+        self.flush_interval = 5  # seconds - accumulate for 5 seconds
+        self.original_stdout = sys.__stdout__
+        self.lock = threading.Lock()
+        self.running = True
+        
+        # Start background flush thread
+        self.flush_thread = threading.Thread(target=self._auto_flush_loop, daemon=True)
+        self.flush_thread.start()
+    
+    def _auto_flush_loop(self):
+        """Flush buffer every 5 seconds"""
+        while self.running:
+            threading.Event().wait(self.flush_interval)
+            with self.lock:
+                if self.text_buffer.strip():
+                    self._send_buffer()
+    
+    def _send_buffer(self):
+        """Send accumulated buffer - must be called with lock held"""
+        if self.text_buffer.strip():
+            log_entry = {
+                'message': self.text_buffer.strip(),
+                'type': self.log_type,
+                'timestamp': datetime.now().strftime("%H:%M:%S")
+            }
+            logs_queue.put(log_entry)
+            
+            # Server console log
+            if self.original_stdout:
+                self.original_stdout.write(f"[BATCH-{self.log_type.upper()}] {self.text_buffer}")
+                self.original_stdout.flush()
+            
+            self.text_buffer = ""
+            self.last_flush_time = datetime.now()
     
     def write(self, message):
-        if message.strip():  # Only send non-empty messages
-            # Clean and format the message
-            clean_msg = message.strip()
-            self.log_callback(clean_msg, self.log_type)
-            # Also write to original stdout for server logs
-            if sys.__stdout__ is not None:
-                sys.__stdout__.write(message)
+        with self.lock:
+            self.text_buffer += message
         return len(message)
     
     def flush(self):
-        pass
+        with self.lock:
+            self._send_buffer()
+        if self.original_stdout:
+            self.original_stdout.flush()
     
     def isatty(self):
         return False
+    
+    def close(self):
+        """Flush and stop"""
+        self.running = False
+        with self.lock:
+            self._send_buffer()
 
 def send_log(message, log_type='info'):
-    """Send log message to SSE queue"""
-    logs_queue.put({
+    """Send log message directly to SSE queue"""
+    log_entry = {
         'message': message,
         'type': log_type,
         'timestamp': datetime.now().strftime("%H:%M:%S")
-    })
+    }
+    logs_queue.put(log_entry)
+    
+    # Log to server stdout only if we have the original reference
+    if hasattr(sys, '__stdout__') and sys.__stdout__ is not None:
+        sys.__stdout__.write(f"[LOG-SEND] [{log_type.upper()}] {message}\n")
+        sys.__stdout__.flush()
 
 def send_progress(message, percentage=0):
     """Send progress update to SSE queue"""
@@ -89,10 +133,20 @@ def index():
     return render_template('index_new.html')
 
 
+@app.route('/api/test-log', methods=['POST'])
+def test_log():
+    """Test endpoint to verify logging works"""
+    send_log("🧪 Test log message", 'info')
+    send_log("✅ Test success message", 'success')
+    send_log("⚠️ Test warning message", 'warning')
+    send_log("❌ Test error message", 'error')
+    return jsonify({'status': 'Test logs sent'})
+
+
 @app.route('/api/run-test', methods=['POST'])
 def run_test():
     """Start UX exploration test with staged execution"""
-    global current_exploration_thread, agent_stop_flag, current_request_id
+    global current_exploration_thread, agent_stop_flag, current_request_id, log_buffer
     
     data = request.json
     app_name = data.get('app_name', 'Unknown App')
@@ -106,7 +160,7 @@ def run_test():
     request_id = str(uuid.uuid4())[:8]
     current_request_id = request_id
     
-    # Clear previous queues
+    # Clear previous queues and log buffer
     while not progress_queue.empty():
         progress_queue.get()
     while not logs_queue.empty():
@@ -190,14 +244,32 @@ def stages():
 def logs():
     """SSE endpoint for execution logs"""
     def generate():
+        # Log connection establishment
+        if sys.__stdout__ is not None:
+            sys.__stdout__.write("[SSE] Logs stream connected\n")
+            sys.__stdout__.flush()
+        
         while True:
             try:
                 log = logs_queue.get(timeout=30)
+                
+                # Debug: show what we're sending
+                if sys.__stdout__ is not None:
+                    sys.__stdout__.write(f"[SSE] Sending log: {log.get('message', '')[:50]}...\n")
+                    sys.__stdout__.flush()
+                
                 yield f"data: {json.dumps(log)}\n\n"
                 
-                # Stop if we see completion message
-                if 'complete' in log.get('message', '').lower() and log.get('type') == 'success':
-                    break
+                # Only stop if we see the FINAL exploration completion message
+                # Don't stop for individual stage completions
+                if log.get('type') == 'success':
+                    message = log.get('message', '').lower()
+                    # Match only the final completion messages
+                    if 'exploration completed successfully' in message or 'test completed successfully' in message:
+                        if sys.__stdout__ is not None:
+                            sys.__stdout__.write("[SSE] Final completion detected, closing stream\n")
+                            sys.__stdout__.flush()
+                        return
             except queue.Empty:
                 yield f"data: {json.dumps({'keepalive': True})}\n\n"
     
@@ -269,7 +341,7 @@ def library():
 
 @app.route('/api/compare')
 def compare():
-    """Get comparison data"""
+    """Get comparison data with detailed metrics"""
     category = request.args.get('category')
     persona = request.args.get('persona')
     
@@ -278,8 +350,80 @@ def compare():
     
     try:
         data = get_comparison_data(category, persona)
-        return jsonify({'items': data})
+        
+        # Extract detailed comparison data
+        items = []
+        all_features = set()
+        
+        for item in data:
+            analysis = item.get('analysis_json')
+            if isinstance(analysis, str):
+                analysis = json.loads(analysis)
+            
+            # Extract features from different sources
+            features = set()
+            if analysis:
+                # From core flows
+                if 'app_metadata' in analysis and 'core_flows' in analysis['app_metadata']:
+                    features.update(analysis['app_metadata']['core_flows'])
+                # From reused patterns in consistency
+                if 'consistency' in analysis and 'reused_patterns' in analysis['consistency']:
+                    features.update(analysis['consistency']['reused_patterns'])
+                # From positives aspects
+                if 'positive' in analysis:
+                    for pos in analysis['positive']:
+                        if 'aspect' in pos:
+                            features.add(pos['aspect'])
+            
+            all_features.update(features)
+            
+            item_data = {
+                'id': item.get('id'),
+                'app_name': item.get('app_name'),
+                'completed_at': item.get('completed_at'),
+                'ux_score': item.get('ux_score'),
+                'analysis_json': analysis,
+                'features': list(features),
+                'issues': analysis.get('issues', []) if analysis else [],
+                'positives': analysis.get('positive', []) if analysis else [],
+                'navigation_depth': analysis.get('navigation_metrics', {}).get('avg_depth', 0) if analysis else 0,
+                'max_depth': analysis.get('navigation_metrics', {}).get('max_depth', 0) if analysis else 0,
+                'complexity_score': analysis.get('complexity_score', 0) if analysis else 0,
+                'screens_discovered': analysis.get('app_metadata', {}).get('screens_discovered', 0) if analysis else 0,
+                'error_handling_rating': analysis.get('error_handling', {}).get('handling_rating', 'unknown') if analysis else 'unknown'
+            }
+            items.append(item_data)
+        
+        # Find common and distinct features
+        if items:
+            common_features = set(items[0]['features'])
+            for item in items[1:]:
+                common_features = common_features.intersection(set(item['features']))
+            
+            # Add distinct features for each item
+            for item in items:
+                item['distinct_features'] = list(set(item['features']) - common_features)
+            
+            comparison_summary = {
+                'common_features': list(common_features),
+                'all_features': list(all_features),
+                'total_apps': len(items)
+            }
+        else:
+            comparison_summary = {
+                'common_features': [],
+                'all_features': [],
+                'total_apps': 0
+            }
+        
+        return jsonify({
+            'items': items,
+            'comparison_summary': comparison_summary
+        })
     except Exception as e:
+        import traceback
+        print(f"Error in compare: {str(e)}")
+        print(traceback.format_exc())
         return jsonify({'error': str(e)}), 500
 
 
@@ -396,6 +540,7 @@ def run_staged_exploration_async(request_id, app_name, category, persona, custom
         send_log(f"🚀 Starting staged exploration for {app_name}...", 'info')
         send_progress(f"Initializing exploration for {app_name}...", 5)
         
+        # Run the exploration - stdout/stderr capture happens inside staged_runner
         asyncio.run(run_staged_exploration(
             request_id=request_id,
             app_name=app_name,

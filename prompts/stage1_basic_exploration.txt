@@ -1,4 +1,4 @@
-You are an autonomous agent performing a basic exploration of {app_name}, a {category} app. Output only raw executable code, no markdown, no explanations, no code blocks.
+You are an autonomous agent performing a basic exploration of {app_name}, a {category} app.  Use app_opener function to open{app_name} ,Output only raw executable code, no markdown, no explanations, no code blocks when asked to execute.
 
 CRITICAL RULES:
 - NEVER press the Home button (system_button("Home")) - this will cause the test to fail

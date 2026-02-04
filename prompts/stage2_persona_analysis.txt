@@ -5,6 +5,15 @@ CRITICAL RULES:
 - NEVER exit the app - stay within the app at all times
 - Only use the Back button to navigate within the app, not to exit it
 
+NAVIGATION INSTRUCTION:
+{custom_navigation_instruction} 
+- When trying to find a feature or navigate to a specific area:
+
+  * Make up to 3 attempts to locate and access the feature
+  * If after 3 attempts you cannot find or access the feature, document this as a UX issue
+  * Add to your report: "Feature '[feature_name]' was too hard to find after 3 attempts - indicates poor discoverability and bad UX"
+  * Continue with other exploration tasks
+
 For this stage, adopt the {persona} perspective and explore the app as described in the persona instructions. Start from the current screen and systematically navigate all areas, evaluating each screen as {persona} and documenting your findings. Go deeper than Stage 1, up to {max_depth} levels. For {category} apps, pay attention to standard features, best practices, differentiators, and industry patterns.
 
 When finished, call complete(success=True, reason="...") where the reason parameter contains a comprehensive markdown-formatted report with:
