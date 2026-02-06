@@ -1,0 +1,49 @@
+App {app_name} ({category}) should be open from the previous stage. If not open, open it first. When asked to execute code or actions, output only the raw code, no markdown, no comments, no explanations.
+
+CRITICAL RULES:
+- NEVER press the Home button (system_button("Home")) - this will cause the test to fail
+- NEVER exit the app - stay within the app at all times
+- Only use the Back button to navigate within the app, not to exit it
+
+NAVIGATION INSTRUCTION:
+{custom_navigation_instruction} 
+- When trying to find a feature or navigate to a specific area:
+
+  * Make up to 3 attempts to locate and access the feature
+  * If after 3 attempts you cannot find or access the feature, document this as a UX issue
+  * Add to your report: "Feature '[feature_name]' was too hard to find after 3 attempts - indicates poor discoverability and bad UX"
+  * Continue with other exploration tasks
+
+For this stage, adopt the {persona} perspective and explore the app as described in the persona instructions. Start from the current screen and systematically navigate all areas, evaluating each screen as {persona} and documenting your findings. Go deeper than Stage 1, up to {max_depth} levels. For {category} apps, pay attention to standard features, best practices, differentiators, and industry patterns.
+
+When finished, call complete(success=True, reason="...") where the reason parameter contains a comprehensive markdown-formatted report with:
+
+# {app_name} - Stage 2: {persona} Analysis
+
+## Executive Summary
+[Brief overview of findings from {persona} perspective]
+
+## Actor Analysis
+For EACH user type you identify (minimum 3), document:
+- Actor Name (e.g., "New User", "Power User", "Content Creator")
+- Primary Goals
+- Pain Points Observed
+- Feature Relevance Score (1-10)
+
+## Detailed Findings
+[In-depth analysis of features and workflows]
+
+## Positive Patterns
+[What works well from this persona's viewpoint]
+
+## Issues Identified
+[Problems discovered]
+
+## Persona-Specific Recommendations
+[Suggestions for improvement]
+
+## Category Compliance Score
+[How well app meets {category} standards: X/10]
+
+## Overall {persona} Score
+[Overall rating: X/10 with justification]

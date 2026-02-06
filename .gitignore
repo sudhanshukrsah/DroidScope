@@ -23,6 +23,10 @@ ux_analysis_blocks.json
 ux_analysis_report.html
 ux_analysis_report1.html
 exploration_report.md
+explorations
+droidscope.db
+JSON_TO_DB_FLOW.md
+agent.py
 
 # Documentation (keeping in repo)
 # IMPLEMENTATION_SUMMARY.md

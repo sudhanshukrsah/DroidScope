@@ -11,27 +11,34 @@ def check_droidrun_connection():
     """Check if DroidRun can connect to device"""
     try:
         print("Checking device connection...")
+        # Use adb instead of droidrun ping (which may not be available)
         result = subprocess.run(
-            ['droidrun', 'ping'],
+            ['adb', 'devices'],
             capture_output=True,
             text=True,
-            timeout=10
+            timeout=5
         )
         
-        if result.returncode == 0:
-            print("✅ Device connected and responsive")
+        # Parse output to check for connected devices
+        lines = result.stdout.strip().split('\n')
+        devices = [l for l in lines[1:] if l.strip() and 'device' in l and 'offline' not in l]
+        
+        if devices:
+            print(f"✅ Device connected and responsive ({len(devices)} device(s))")
+            for device in devices:
+                print(f"   {device}")
             return True
         else:
             print("❌ Device not connected or not responding!")
-            print(f"   Error: {result.stderr}")
+            print("   Run 'adb devices' to check device status")
             return False
     except subprocess.TimeoutExpired:
         print("❌ Device connection timeout!")
-        print("   Device is not responding")
+        print("   ADB is not responding")
         return False
     except FileNotFoundError:
-        print("❌ DroidRun command not found!")
-        print("   Is DroidRun installed?")
+        print("❌ ADB command not found!")
+        print("   Is Android SDK Platform Tools installed?")
         return False
     except Exception as e:
         print(f"❌ Error checking device: {str(e)}")

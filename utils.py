@@ -59,3 +59,60 @@ def load_and_format_prompt(prompt_name, **kwargs):
     """
     template = load_prompt(prompt_name)
     return format_prompt(template, **kwargs)
+
+
+def read_markdown_file(filename):
+    """Read a markdown file from the root directory
+    
+    Args:
+        filename: Name of the markdown file
+    
+    Returns:
+        str: Content of the markdown file or None if not found
+    """
+    file_path = get_project_root() / filename
+    try:
+        if file_path.exists():
+            with open(file_path, 'r', encoding='utf-8') as f:
+                return f.read()
+        return None
+    except Exception as e:
+        print(f"Error reading {filename}: {e}")
+        return None
+
+
+def find_stage_markdown_files():
+    """Find all stage markdown files in root directory
+    
+    Returns:
+        dict: Dictionary mapping stage number to file content
+    """
+    root = get_project_root()
+    stage_files = {}
+    
+    # Look for stage files with pattern stage*_*.md
+    for file in root.glob('stage*_*.md'):
+        try:
+            # Extract stage number from filename
+            name = file.stem  # e.g., 'stage1_basic_exploration'
+            if name.startswith('stage'):
+                stage_num = int(name[5])  # Get the digit after 'stage'
+                with open(file, 'r', encoding='utf-8') as f:
+                    stage_files[stage_num] = {
+                        'filename': file.name,
+                        'content': f.read()
+                    }
+        except (ValueError, IndexError):
+            continue
+    
+    return stage_files
+
+
+def cleanup_stage_files():
+    """Remove stage markdown files from root directory"""
+    root = get_project_root()
+    for file in root.glob('stage*_*.md'):
+        try:
+            file.unlink()
+        except Exception as e:
+            print(f"Error deleting {file}: {e}")
